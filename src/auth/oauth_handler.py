@@ -127,7 +127,11 @@ class ProductionOAuthHandler:
         if st.button("🔐 Sign in with Google", key="google_login", use_container_width=True):
             st.session_state.auth_provider_pending = 'google'
             auth_url = self._get_google_auth_url()
-            st.markdown(f'<meta http-equiv="refresh" content="0;url={auth_url}">', unsafe_allow_html=True)
+            st.markdown(f"""
+                <script>
+                    window.top.location.href = "{auth_url}";
+                </script>
+            """, unsafe_allow_html=True)
             return True
     
     def github_login(self):
@@ -142,7 +146,11 @@ class ProductionOAuthHandler:
         if st.button("🔐 Sign in with GitHub", key="github_login", use_container_width=True):
             st.session_state.auth_provider_pending = 'github'
             auth_url = self._get_github_auth_url()
-            st.markdown(f'<meta http-equiv="refresh" content="0;url={auth_url}">', unsafe_allow_html=True)
+            st.markdown(f"""
+                <script>
+                    window.top.location.href = "{auth_url}";
+                </script>
+            """, unsafe_allow_html=True)
             return True
     
     def _get_google_auth_url(self):

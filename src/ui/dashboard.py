@@ -313,7 +313,7 @@ def main():
 
         st.divider()
         
-        # Logout & User Context moved to bottom
+        # Logout & User Context at the absolute end
         col_u, col_l = st.columns([4, 1])
         with col_u:
             st.caption(f"👤 {user_info['email']}")
@@ -325,7 +325,7 @@ def main():
         st.caption(f"Build: {BUILD_VERSION} | {BUILD_TIME}")
         st.markdown(
             """
-            <div style='text-align: center; padding: 0.5rem; opacity: 0.5;'>
+            <div style='text-align: center; padding-top: 1rem; opacity: 0.5; font-size: 0.8rem;'>
                 Developed with ❤️ by <br>
                 <a href='https://d3v3sh5ingh.github.io/deveshsingh.ml' target='_blank' style='color: #6366f1; font-weight: bold; text-decoration: none;'>Devesh Singh</a>
             </div>
