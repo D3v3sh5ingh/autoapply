@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, joinedload
-from .models import Base, Job, Application
+from .models import Base, Job, Application, User
+from datetime import datetime
 
 # Use absolute path for DB to avoid file not found issues in complex envs if needed, 
 # but relative is fine for this project structure usually.
@@ -16,9 +17,41 @@ def get_db():
     finally:
         db.close()
 
-def save_jobs(jobs_list):
+# ===== USER MANAGEMENT =====
+
+def get_or_create_user(email: str, name: str, provider: str) -> int:
     """
-    Saves a list of jobs to the DB, ignoring duplicates based on URL.
+    Get existing user by email or create new one.
+    Returns: user_id
+    """
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter_by(email=email).first()
+        if user:
+            return user.id
+        
+        # Create new user
+        new_user = User(email=email, name=name, oauth_provider=provider)
+        session.add(new_user)
+        session.commit()
+        session.refresh(new_user)
+        return new_user.id
+    finally:
+        session.close()
+
+def get_user_by_id(user_id: int):
+    """Get user details by ID."""
+    session = SessionLocal()
+    try:
+        return session.query(User).filter_by(id=user_id).first()
+    finally:
+        session.close()
+
+# ===== JOB OPERATIONS (USER-SCOPED) =====
+
+def save_jobs(jobs_list, user_id: int):
+    """
+    Saves a list of jobs to the DB for specific user, ignoring duplicates based on URL.
     Returns: Number of new jobs added.
     """
     session = SessionLocal()
@@ -27,8 +60,15 @@ def save_jobs(jobs_list):
         for job_data in jobs_list:
             if not job_data.url: continue
             
+            # Check if job already exists for this user
+            existing = session.query(Job).filter_by(url=job_data.url, user_id=user_id).first()
+            if existing:
+                continue
+            
+            # Set user_id
+            job_data.user_id = user_id
+            
             # Use merge instead of add to keep the original job_data object detached/usable in UI
-            # merge() returns the db-bound instance, but we ignore it and keep using job_data
             session.merge(job_data)
             count += 1
         session.commit()
@@ -39,7 +79,7 @@ def save_jobs(jobs_list):
         session.close()
     return count
 
-def mark_job_applied(job_id, status="applied", notes=None):
+def mark_job_applied(job_id: int, user_id: int, status="applied", notes=None):
     """
     Marks a job as applied by creating an Application record.
     Returns: True if successful or already applied, False on error.
@@ -47,9 +87,9 @@ def mark_job_applied(job_id, status="applied", notes=None):
     session = SessionLocal()
     try:
         # Check if already applied
-        exists = session.query(Application).filter_by(job_id=job_id).first()
+        exists = session.query(Application).filter_by(job_id=job_id, user_id=user_id).first()
         if not exists:
-            app = Application(job_id=job_id, status=status, notes=notes)
+            app = Application(job_id=job_id, user_id=user_id, status=status, notes=notes)
             session.add(app)
             session.commit()
         return True
@@ -60,36 +100,34 @@ def mark_job_applied(job_id, status="applied", notes=None):
     finally:
         session.close()
 
-def get_saved_jobs():
+def get_saved_jobs(user_id: int):
     """
-    Returns all jobs, eager loading the 'applications' relationship.
+    Returns all jobs for specific user, eager loading the 'applications' relationship.
     """
     session = SessionLocal()
     try:
         # Eager load applications to avoid DetachedInstanceError when accessing job.applications later
-        return session.query(Job).options(joinedload(Job.applications)).order_by(Job.date_posted.desc()).all()
+        return session.query(Job).filter_by(user_id=user_id).options(joinedload(Job.applications)).order_by(Job.date_posted.desc()).all()
     finally:
         session.close()
 
-def clean_old_jobs(days=30):
+def clean_old_jobs(user_id: int, days=30):
     """
-    Deletes jobs posted more than 'days' ago.
+    Deletes jobs posted more than 'days' ago for specific user.
     Keeps applied jobs to preserve history.
     """
     session = SessionLocal()
     count = 0
     try:
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         cutoff = datetime.utcnow() - timedelta(days=days)
         
-        # logic: Delete jobs where date_posted < cutoff AND id NOT IN applications
-        # Simple approach: Get all old jobs, check if applied, delete if not.
-        old_jobs = session.query(Job).filter(Job.date_posted < cutoff).all()
+        # Get old jobs for this user
+        old_jobs = session.query(Job).filter(Job.user_id == user_id, Job.date_posted < cutoff).all()
         
         for job in old_jobs:
             # Check if this job has an application
-            # We need to check the relationship or query Application table
-            is_applied = session.query(Application).filter_by(job_id=job.id).first()
+            is_applied = session.query(Application).filter_by(job_id=job.id, user_id=user_id).first()
             if not is_applied:
                 session.delete(job)
                 count += 1
@@ -102,11 +140,11 @@ def clean_old_jobs(days=30):
         session.close()
     return count
 
-def delete_job(job_id):
-    """Deletes a single job by ID."""
+def delete_job(job_id: int, user_id: int):
+    """Deletes a single job by ID for specific user."""
     session = SessionLocal()
     try:
-        job = session.query(Job).filter_by(id=job_id).first()
+        job = session.query(Job).filter_by(id=job_id, user_id=user_id).first()
         if job:
             session.delete(job)
             session.commit()
@@ -133,3 +171,4 @@ def init_db():
     """Creates the database tables."""
     Base.metadata.create_all(bind=engine)
     print("Database tables created.")
+

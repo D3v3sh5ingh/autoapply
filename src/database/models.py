@@ -6,10 +6,25 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 class Base(DeclarativeBase):
     pass
 
+class User(Base):
+    __tablename__ = 'users'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    oauth_provider: Mapped[str] = mapped_column(String(50))  # 'google' or 'github'
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    jobs: Mapped[List["Job"]] = relationship(back_populates="user")
+    applications: Mapped[List["Application"]] = relationship(back_populates="user")
+    profiles: Mapped[List["Profile"]] = relationship(back_populates="user")
+
 class Job(Base):
     __tablename__ = 'jobs'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)
     title: Mapped[str] = mapped_column(String(200))
     company: Mapped[str] = mapped_column(String(200))
     location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
@@ -24,23 +39,27 @@ class Job(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
+    user: Mapped["User"] = relationship(back_populates="jobs")
     applications: Mapped[List["Application"]] = relationship(back_populates="job")
 
 class Application(Base):
     __tablename__ = 'applications'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)
     job_id: Mapped[int] = mapped_column(ForeignKey('jobs.id'))
     status: Mapped[str] = mapped_column(String(50), default='applied')  # applied, interview, offer, rejected
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     date_applied: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
+    user: Mapped["User"] = relationship(back_populates="applications")
     job: Mapped["Job"] = relationship(back_populates="applications")
 
 class Profile(Base):
     __tablename__ = 'profiles'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100))
     resume_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -48,3 +67,5 @@ class Profile(Base):
     skills: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     preferences: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # locations, job types, etc.
+    
+    user: Mapped["User"] = relationship(back_populates="profiles")

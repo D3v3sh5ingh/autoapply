@@ -36,39 +36,24 @@ from src.scraper.naukri_scraper import NaukriScraper
 from src.scraper.linkedin_scraper import LinkedInScraper
 from src.database.models import Job, Profile
 
-# STREAMLIT PAGE CONFIG (must be first Streamlit command)
-st.set_page_config(page_title="JobPulse Agent", layout="wide")
+# STREAMLIT PAGE CONFIG
+st.set_page_config(page_title="AutoApply Dashboard", layout="wide")
 
-# Auth and Multi-User Support
-from src.auth import OAuthHandler
-from src.ui.login_page import show_login_page  
-from src.utils.rate_limiter import RateLimiter, init_rate_limiter_table
-from src.database.db import save_jobs, get_saved_jobs, mark_job_applied, init_db, delete_job, reset_db, get_or_create_user
+# ... imports ...
+from src.database.db import save_jobs, get_saved_jobs, mark_job_applied, init_db, delete_job, reset_db
+
+# STREAMLIT PAGE CONFIG
+st.set_page_config(page_title="AutoApply Dashboard", layout="wide")
 
 def main():
     # Ensure DB tables exist on startup
     try:
         init_db()
-        init_rate_limiter_table()
     except Exception as e:
         print(f"DB Init Warning: {e}")
-    
-    # === AUTHENTICATION GATE ===
-    auth = OAuthHandler()
-    if not auth.is_authenticated():
-        show_login_page()
-        return
-    
-    # Get authenticated user and ensure they exist in DB
-    user_info = auth.get_current_user()
-    if 'user_id' not in st.session_state or st.session_state.user_id is None:
-        user_id = get_or_create_user(user_info['email'], user_info['name'], user_info['provider'])
-        st.session_state.user_id = user_id
-    else:
-        user_id = st.session_state.user_id
 
     st.title("🤖 JobPulse Agent")
-    st.caption(f"Welcome back, {user_info['name']} • {user_info['email']}")
+    st.caption("Your Privacy-First AI Job Assistant (Scrape • Match • Track)")
     
     # TABS
     tab_search, tab_history, tab_analytics = st.tabs(["🔍 Search & Apply", "📊 History & Tracking", "📈 Analytics"])
@@ -76,23 +61,7 @@ def main():
     with st.sidebar:
         st.header("⚙️ Configuration")
         
-        # User context + logout
-        col_u, col_l = st.columns([3, 1])
-        with col_u:
-            st.caption(f"👤 {user_info['email']}")
-        with col_l:
-            if st.button("⎋"):  # Logout symbol
-                auth.logout()
-                st.rerun()
-        
-        # Daily quota
-        limiter = RateLimiter(user_id)
-        usage = limiter.get_usage_today()
-        st.caption(f"🔥 Searches: {usage['searches']}/{limiter.DAILY_SEARCH_LIMIT} today")
-        
-        st.divider()
-        
-        with st.expander("👤 Profile & Resume", expanded=False):
+        with st.expander("👤 Profile & Resume", expanded=True):
             name = st.text_input("Name", "Devesh Singh")
             phone = st.text_input("Mobile Number", "9876543210")
             
@@ -157,16 +126,10 @@ def main():
 
         st.divider()
         if st.button("🚀 Find Jobs", type="primary"):
-            # Rate limit check
-            can_search, msg = limiter.can_search()
-            if not can_search:
-                st.error(msg)
-            else:
-                limiter.record_search()
-                run_search(query, location, skills, resume_text, resume_path, phone, use_mock, 
-                           use_instahyre, use_hn, use_semantic, use_naukri, 
-                           use_linkedin, use_smart_search, use_arbeitnow,
-                           email_enabled, email_user, email_pass, user_id, search_limit)
+            run_search(query, location, skills, resume_text, resume_path, phone, use_mock, 
+                       use_instahyre, use_hn, use_semantic, use_naukri, 
+                       use_linkedin, use_smart_search, use_arbeitnow,
+                       email_enabled, email_user, email_pass, search_limit)
 
     # --- TAB 1: SEARCH ---
     with tab_search:
@@ -187,7 +150,7 @@ def main():
             
             # Batch Actions
             if st.button(f"⚡ Auto-Apply to Top 5 Matches"):
-                run_batch_apply(results[:5], name, skills, resume_text, resume_path, phone, user_id)
+                run_batch_apply(results[:5], name, skills, resume_text)
 
             for job in results:
                 # Card UI
@@ -209,7 +172,7 @@ def main():
                         st.link_button("View / Apply Manually", job.url)
                         
                         if st.button(f"Auto Apply 🤖", key=f"btn_{job.url}"):
-                             run_single_apply(job, name, skills, resume_text, resume_path, phone, user_id)
+                             run_single_apply(job, name, skills, resume_text)
                     st.divider()
     
     # --- TAB 2: HISTORY ---
@@ -219,7 +182,7 @@ def main():
         # Controls Row
         col_sort, col_filter, col_refresh = st.columns([2, 2, 1])
         
-        saved = get_saved_jobs(user_id)
+        saved = get_saved_jobs()
         
         # Extract unique locations for filter
         unique_locs = sorted(list(set([j.location for j in saved if j.location])))
@@ -255,7 +218,7 @@ def main():
             if st.button("Run Cleanup Task"):
                 try:
                     from src.database.db import clean_old_jobs
-                    deleted = clean_old_jobs(user_id, days=30)
+                    deleted = clean_old_jobs(days=30)
                     st.success(f"Cleanup Complete! Removed {deleted} old jobs.")
                     st.rerun()
                 except Exception as e:
@@ -321,17 +284,17 @@ def main():
                                 st.rerun()
                         with c2:
                             if st.button("✅ Mark Done", key=f"manual_{job.id}", help="Mark as applied manually"):
-                                mark_job_applied(job.id, user_id, status="manual")
+                                mark_job_applied(job.id, status="manual")
                                 st.toast(f"Marked {job.company} as Applied!")
                                 st.rerun()
                         with c3:
                             if st.button("🗑️", key=f"del_{job.id}", help="Delete this job"):
-                                delete_job(job.id, user_id)
+                                delete_job(job.id)
                                 st.rerun()
                     else:
                          # Even if applied, allow delete if user wants to clean history
                          if st.button("🗑️ Delete Record", key=f"del_app_{job.id}"):
-                             delete_job(job.id, user_id)
+                             delete_job(job.id)
                              st.rerun()
                 st.divider()
 
@@ -339,7 +302,7 @@ def main():
     with tab_analytics:
         st.markdown("### 🧠 Smart Insights & Gaps")
         
-        saved = get_saved_jobs(user_id)
+        saved = get_saved_jobs()
         if not saved:
             st.info("No data yet. Run some searches to generate insights!")
         else:
@@ -405,7 +368,7 @@ def main():
                 st.dataframe(pd.DataFrame(top_cos, columns=["Company", "Jobs Found"]), hide_index=True)
 
 
-def run_batch_apply(jobs, name, skills, resume_text, resume_path, phone, user_id):
+def run_batch_apply(jobs, name, skills, resume_text, resume_path, phone):
     temp_profile = Profile(name=name, skills=skills, resume_text=resume_text, resume_path=resume_path, phone=phone)
     progress = st.progress(0)
     status = st.empty()
@@ -420,7 +383,7 @@ def run_batch_apply(jobs, name, skills, resume_text, resume_path, phone, user_id
             try:
                 bot.fill_application(job.url, temp_profile)
                 # TRACKING
-                mark_job_applied(job.id, user_id, status="applied")
+                mark_job_applied(job.id, status="applied")
                 st.toast(f"✅ Applied & Tracked: {job.company}")
             except Exception as e:
                 st.toast(f"❌ Failed {job.company}: {e}")
@@ -432,7 +395,7 @@ def run_batch_apply(jobs, name, skills, resume_text, resume_path, phone, user_id
     except Exception as e:
         st.error(f"Batch Error: {e}")
 
-def run_single_apply(job, name, skills, resume_text, resume_path, phone, user_id):
+def run_single_apply(job, name, skills, resume_text, resume_path, phone):
     temp_profile = Profile(name=name, skills=skills, resume_text=resume_text, resume_path=resume_path, phone=phone)
     st.toast(f"Launching Auto-Apply Bot for {job.company}...", icon="🚀")
     try:
@@ -442,13 +405,13 @@ def run_single_apply(job, name, skills, resume_text, resume_path, phone, user_id
         
         # TRACKING
         if job.id:
-            mark_job_applied(job.id, user_id, status="applied")
+            mark_job_applied(job.id, status="applied")
         
         st.success(f"Bot finished for {job.title}. Marked as Applied.")
     except Exception as e:
         st.error(f"Bot failed: {e}")
 
-def run_search(query, location, skills, resume_text, resume_path, phone, use_mock, use_instahyre, use_hn, use_semantic, use_naukri, use_linkedin, use_smart_search, use_arbeitnow, email_enabled, email_user, email_pass, user_id, limit=10):
+def run_search(query, location, skills, resume_text, resume_path, phone, use_mock, use_instahyre, use_hn, use_semantic, use_naukri, use_linkedin, use_smart_search, use_arbeitnow, email_enabled, email_user, email_pass, limit=10):
     # SMART SEARCH LOGIC
     queries = [query]
     if use_smart_search:
@@ -569,7 +532,7 @@ def run_search(query, location, skills, resume_text, resume_path, phone, use_moc
                 search_log.append("❌ Email Notification failed.")
 
     # Save to DB
-    saved_count = save_jobs(matched_jobs, user_id)
+    saved_count = save_jobs(matched_jobs)
     search_log.append(f"💾 Saved {saved_count} new unique jobs to Database.")
     
     st.session_state['results'] = matched_jobs
