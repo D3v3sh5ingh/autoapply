@@ -108,6 +108,8 @@ def show_login_page():
                 st.link_button("🔐 Sign in with GitHub", github_url, use_container_width=True)
             else:
                 st.error("GitHub OAuth not configured")
+                
+            st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
             
             # Guest Login (still needs to be a button because it's an action, not a link)
             if st.button("⚡ Skip & Use as Guest", key="guest_login", use_container_width=True):

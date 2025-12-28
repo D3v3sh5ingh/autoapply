@@ -53,10 +53,6 @@ class ProductionOAuthHandler:
         
     def handle_callback(self):
         """Check if we're currently in an OAuth callback flow and process it."""
-        # 0. Avoid double-processing if already authenticated
-        if self.is_authenticated():
-            return True
-            
         # Log to console for real-time debugging
         print(f"DEBUG: handle_callback triggered. Query params: {st.query_params}")
         
@@ -94,23 +90,16 @@ class ProductionOAuthHandler:
             
             if should_proceed:
                 # Silently proceed in the background
-                success = False
                 if provider == 'google':
-                    success = self._handle_google_callback(code)
+                    return self._handle_google_callback(code)
                 elif provider == 'github':
-                    success = self._handle_github_callback(code)
+                    return self._handle_github_callback(code)
                 else:
                     # Guessing game if prefix was mangled but we are in dev
                     if is_dev:
                         st.info("Testing providers...")
-                        if self._handle_google_callback(code): 
-                            success = True
-                        elif self._handle_github_callback(code):
-                            success = True
-                
-                if success:
-                    st.rerun()
-                    return True
+                        if self._handle_google_callback(code): return True
+                        return self._handle_github_callback(code)
             
             # If we got here, validation failed
             st.error("⚠️ Authentication State Mismatch")
@@ -250,7 +239,7 @@ class ProductionOAuthHandler:
             
             # Clear query params
             st.toast(f"✅ Signed in as {st.session_state.user_email}")
-            # st.rerun()  <-- REMOVED: Handled by caller
+            st.rerun()
             return True
             
         except Exception as e:
@@ -310,7 +299,7 @@ class ProductionOAuthHandler:
             
             # Clear query params
             st.toast(f"✅ Signed in as {st.session_state.user_email}")
-            # st.rerun() <-- REMOVED: Handled by caller
+            st.rerun()
             return True
             
         except Exception as e:
