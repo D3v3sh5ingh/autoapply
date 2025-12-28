@@ -1,19 +1,16 @@
 import os
 import sys
 
+# === PATH INJECTION FOR STREAMLIT CLOUD ===
+# Ensure the project root is in PYTHONPATH regardless of how/where the script is run
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 # CRITICAL FIX: Force correct SSL Certificate path before any other imports
 try:
-    # 1. Check for standard Windows path (local dev)
-    # 2. Check for standard Linux path (Docker)
-    # 3. Check for certifi path via python
     import certifi
     cert_path = certifi.where()
-    
-    # Override for specific broken environments if necessary
-    custom_win_path = r"C:\Python312\Lib\site-packages\certifi\cacert.pem"
-    if os.path.exists(custom_win_path):
-        cert_path = custom_win_path
-        
     os.environ['REQUESTS_CA_BUNDLE'] = cert_path
     os.environ['SSL_CERT_FILE'] = cert_path
 except: 
