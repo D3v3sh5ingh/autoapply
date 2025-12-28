@@ -11,8 +11,7 @@ class SemanticMatcher(BaseMatcher):
         super().__init__()
         self.model = None
         # FORCE SSL CERTIFICATE PATH
-        # We found the valid cert at C:\Python312\Lib\site-packages\certifi\cacert.pem
-        cert_path = r"C:\Python312\Lib\site-packages\certifi\cacert.pem"
+        cert_path = certifi.where()
         os.environ['REQUESTS_CA_BUNDLE'] = cert_path
         os.environ['SSL_CERT_FILE'] = cert_path
         
