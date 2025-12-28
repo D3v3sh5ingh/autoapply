@@ -193,11 +193,15 @@ def main():
     
     # Process any incoming OAuth callbacks before checking state
     if auth.handle_callback():
+        print("DEBUG: Callback handled, rerunning...")
         return
         
     if not auth.is_authenticated():
+        print("DEBUG: Not authenticated, showing login page.")
         show_login_page()
         return
+    
+    print(f"DEBUG: Authenticated as {auth.get_current_user()['email']}")
     
     # Get authenticated user and ensure they exist in DB
     user_info = auth.get_current_user()
