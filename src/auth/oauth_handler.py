@@ -41,46 +41,18 @@ class OAuthHandler:
                 del st.session_state[key]
                 
     def google_login(self):
-        """Initiate Google OAuth flow using Streamlit's experimental auth."""
-        # Using Streamlit's experimental OAuth (simplified approach)
-        # For production, integrate with actual OAuth library
-        
-        if not self.google_client_id:
-            st.error("⚠️ Google OAuth not configured. Add GOOGLE_CLIENT_ID to .env file.")
-            return False
-            
-        # Streamlit experimental connection approach
-        try:
-            # This is a placeholder for Streamlit's OAuth integration
-            # In practice, you'd use st.experimental_connection or a proper OAuth library
-            st.info("🔄 Google OAuth integration pending. Using demo mode for now.")
-            
-            # DEMO MODE: Simulate login for development
-            if st.button("🧪 Demo Login (Google)", key="google_demo"):
-                self._demo_login("google")
-                return True
-                
-        except Exception as e:
-            st.error(f"Google login failed: {e}")
-            return False
+        """Initiate Google OAuth flow or use demo mode."""
+        # Demo mode is default - no setup needed for personal use
+        if st.button("🔐 Sign in with Google (Demo Mode)", key="google_demo", use_container_width=True):
+            self._demo_login("google")
+            return True
             
     def github_login(self):
-        """Initiate GitHub OAuth flow."""
-        if not self.github_client_id:
-            st.error("⚠️ GitHub OAuth not configured. Add GITHUB_CLIENT_ID to .env file.")
-            return False
-            
-        try:
-            st.info("🔄 GitHub OAuth integration pending. Using demo mode for now.")
-            
-            # DEMO MODE
-            if st.button("🧪 Demo Login (GitHub)", key="github_demo"):
-                self._demo_login("github")
-                return True
-                
-        except Exception as e:
-            st.error(f"GitHub login failed: {e}")
-            return False
+        """Initiate GitHub OAuth flow or use demo mode."""
+        # Demo mode is default - no setup needed for personal use
+        if st.button("🔐 Sign in with GitHub (Demo Mode)", key="github_demo", use_container_width=True):
+            self._demo_login("github")
+            return True
             
     def _demo_login(self, provider: str):
         """Demo login for development/testing without real OAuth."""

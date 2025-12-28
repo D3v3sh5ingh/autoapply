@@ -16,6 +16,7 @@
 
 ## 🛠️ Setup & Usage
 
+### Quick Start (Personal Use)
 1.  **Install**:
     ```bash
     pip install -r requirements.txt
@@ -25,12 +26,17 @@
     ```bash
     streamlit run src/ui/dashboard.py
     ```
-    *Open http://localhost:8501 in your browser.*
+    *Open http://localhost:8501 - click demo login (no OAuth setup needed!)*
 
-3.  **Configure**:
-    *   Enter your Name and Skills in the sidebar.
-    *   (Optional) Enable Email Alerts with your Gmail/Outlook App Password.
-    *   Upload your Resume PDF.
+3.  **First-time Setup**:
+    - Click "Sign in with Google (Demo Mode)" or "Sign in with GitHub (Demo Mode)"
+    - Upload your resume, add skills, start searching!
+
+### Advanced: Real OAuth (Optional - for multi-user deployment)
+Only needed if deploying as a public service:
+1. Get OAuth credentials from [Google Console](https://console.cloud.google.com) or [GitHub](https://github.com/settings/developers)
+2. Copy `.env.example` to `.env` and add your credentials
+3. Real OAuth will replace demo mode automatically
 
 ## � Docker Deployment
 For easy deployment on a server or locally without installing dependencies manually:

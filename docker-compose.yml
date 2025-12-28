@@ -8,6 +8,8 @@ services:
       - "8501:8501"
     volumes:
       - ./autoapply.db:/app/autoapply.db # Persist Database
+    env_file:
+      - .env # OAuth credentials
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
