@@ -153,6 +153,12 @@ class ProductionOAuthHandler:
             """, unsafe_allow_html=True)
             return True
     
+    def get_google_auth_url_only(self):
+        """Get the Google Auth URL for link buttons."""
+        if not self.google_client_id or not self.google_client_secret:
+            return None
+        return self._get_google_auth_url()
+
     def _get_google_auth_url(self):
         """Generate Google OAuth authorization URL."""
         import secrets
@@ -173,6 +179,12 @@ class ProductionOAuthHandler:
         from urllib.parse import urlencode
         return f"{self.google_auth_url}?{urlencode(params)}"
     
+    def get_github_auth_url_only(self):
+        """Get the GitHub Auth URL for link buttons."""
+        if not self.github_client_id or not self.github_client_secret:
+            return None
+        return self._get_github_auth_url()
+
     def _get_github_auth_url(self):
         """Generate GitHub OAuth authorization URL."""
         import secrets

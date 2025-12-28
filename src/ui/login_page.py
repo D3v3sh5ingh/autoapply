@@ -75,44 +75,49 @@ def show_login_page():
         </style>
     """, unsafe_allow_html=True)
     
-    # Centered login container
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
-    
-    # We use a container to apply the card styling via CSS
-    # targeted at the column block
-    _, col2, _ = st.columns([1, 2, 1])
+    # Centered layout using columns
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    _, col2, _ = st.columns([1, 1.5, 1])
     
     with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        st.markdown('<h1 class="login-title">🤖 JobPulse Agent</h1>', unsafe_allow_html=True)
-        st.markdown('<p class="login-subtitle">Professional AI-Powered Job Search</p>', unsafe_allow_html=True)
-        
-        st.write("---")
-        st.write("**Sign in to continue**")
-        st.caption("Your personalized job search dashboard awaits")
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        auth = OAuthHandler()
-        
-        # Google/GitHub login buttons
-        auth.google_login()
-        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
-        auth.github_login()
-        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
-        
-        if st.button("⚡ Skip & Use as Guest", key="guest_login", use_container_width=True):
-            auth.guest_login()
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Info section
-        with st.expander("ℹ️ About OAuth Login"):
-            st.markdown("""
-            - **🔐 Secure:** No passwords stored
-            - **🔒 Private:** Data isolation per user
-            - **🚀 Fast:** One-click integration
-            """)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("🔒 Privacy-first • 100% open source")
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Use native container for stability
+        with st.container(border=True):
+            st.markdown('<h1 class="login-title">🤖 JobPulse Agent</h1>', unsafe_allow_html=True)
+            st.markdown('<center>Professional AI-Powered Job Search</center>', unsafe_allow_html=True)
+            st.divider()
+            
+            st.markdown("<div style='text-align: center'><b>Sign in to continue</b><br><span style='color: #64748b; font-size: 0.9em'>Your personalized job search awaits</span></div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            auth = OAuthHandler()
+            
+            # Generate URLs (state is handled internally by generating fresh tokens)
+            google_url = auth.get_google_auth_url_only()
+            github_url = auth.get_github_auth_url_only()
+            
+            # Google Login
+            if google_url:
+                st.link_button("🔐 Sign in with Google", google_url, use_container_width=True)
+            else:
+                st.error("Google OAuth not configured")
+                
+            st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+            
+            # GitHub Login
+            if github_url:
+                st.link_button("🔐 Sign in with GitHub", github_url, use_container_width=True)
+            else:
+                st.error("GitHub OAuth not configured")
+                
+            st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+            
+            # Guest Login (still needs to be a button because it's an action, not a link)
+            if st.button("⚡ Skip & Use as Guest", key="guest_login", use_container_width=True):
+                auth.guest_login()
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            with st.expander("ℹ️ About OAuth Login"):
+                st.markdown("- **Secure:** No passwords stored\n- **Private:** Isolated data per user")
+            
+            st.caption("🔒 Privacy-first • 100% open source")
