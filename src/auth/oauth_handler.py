@@ -22,7 +22,8 @@ class ProductionOAuthHandler:
         self.github_client_secret = os.getenv("GITHUB_CLIENT_SECRET")
         
         # Redirect URI (must match OAuth app settings)
-        self.redirect_uri = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8501")
+        raw_redirect = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8501")
+        self.redirect_uri = raw_redirect.rstrip('/')
         
         # OAuth endpoints
         self.google_auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
