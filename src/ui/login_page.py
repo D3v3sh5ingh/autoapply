@@ -15,32 +15,33 @@ def show_login_page():
             
             html, body, [class*="css"] {
                 font-family: 'Inter', sans-serif;
-                background-color: #0F172A; /* Slate-950 */
-                color: #E2E8F0;
+                background-color: #0F172A;
             }
             
-            [data-testid="stSidebar"] {
-                display: none;
+            [data-testid="stSidebar"] { display: none; }
+            
+            .login-wrapper {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding-top: 5rem;
             }
             
-            .login-container {
-                max-width: 500px;
-                margin: 4rem auto;
-                padding: 3rem;
-                background: #1E293B; /* Slate-800 */
-                border-radius: 16px;
-                border: 1px solid #334155; /* Slate-700 */
+            .login-card {
+                width: 100%;
+                max-width: 450px;
+                background: #1E293B;
+                padding: 3.5rem 2.5rem;
+                border-radius: 20px;
+                border: 1px solid #334155;
                 text-align: center;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             }
             
-            .login-logo {
-                font-size: 3.5rem;
-                margin-bottom: 1rem;
-            }
+            .login-logo { font-size: 4rem; margin-bottom: 1.5rem; }
             
             .login-title {
-                color: #F8FAFC;
+                color: #F8FAFC !important;
                 font-weight: 800;
                 font-size: 2.5rem !important;
                 margin-bottom: 0.5rem;
@@ -53,76 +54,84 @@ def show_login_page():
                 margin-bottom: 3rem;
             }
             
-            /* Industrial Buttons */
-            .stButton>button, .stLinkButton>a {
-                border-radius: 8px !important;
-                height: 3.5rem !important;
-                font-weight: 600 !important;
-                transition: all 0.2s !important;
-                border: 1px solid #334155 !important;
-                background-color: #0F172A !important;
+            .auth-btn {
+                display: block;
+                width: 100%;
+                padding: 1.1rem;
+                margin-bottom: 1rem;
+                border-radius: 10px;
+                font-weight: 601;
+                text-decoration: none;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                border: 1px solid #334155;
+                background-color: #0F172A;
                 color: #F1F5F9 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                text-decoration: none !important;
+                text-align: center;
             }
             
-            .stButton>button:hover, .stLinkButton>a:hover {
-                border-color: #38BDF8 !important;
+            .auth-btn:hover {
+                border-color: #38BDF8;
                 color: #38BDF8 !important;
-                transform: translateY(-1px) !important;
-                background-color: rgba(56, 189, 248, 0.05) !important;
-                box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.2);
             }
             
-            /* Remove default streamlit button container gaps */
-            .element-container { margin-bottom: 0px !important; }
+            .guest-link {
+                display: inline-block;
+                margin-top: 1.5rem;
+                color: #64748B;
+                font-size: 0.95rem;
+                text-decoration: none;
+                transition: color 0.2s;
+            }
+            .guest-link:hover { color: #38BDF8; }
+            
+            .card-footer {
+                margin-top: 3.5rem;
+                padding-top: 1.5rem;
+                border-top: 1px solid #334155;
+                color: #475569;
+                font-size: 0.8rem;
+                letter-spacing: 0.05em;
+            }
         </style>
     """, unsafe_allow_html=True)
     
-    # Centered design using st.columns for outer padding
-    _, main_col, _ = st.columns([1, 2, 1])
-    
-    with main_col:
-        # Wrap the header in a styled div
-        st.markdown("""
-            <div class="login-container">
-                <div class="login-logo">🤖</div>
-                <h1 class="login-title">JobPulse Agent</h1>
-                <p class="login-subtitle">AI-Driven Job Search Intelligence</p>
-        """, unsafe_allow_html=True)
-        
-        auth = OAuthHandler()
-        
-        # PROVIDER BUTTONS
-        auth.google_login("🔐 Sign in with Google")
-        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
-        auth.github_login("🔐 Sign in with GitHub")
-        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
-        
-        # GUEST BUTTON
-        if st.button("⚡ Continue as Guest", key="guest_login", use_container_width=True):
-            auth.guest_login()
-            
-        st.markdown("<div style='height: 2rem'></div>", unsafe_allow_html=True)
-        
-        # UTILITIES
-        with st.expander("🛡️ Enterprise Security"):
-            st.markdown("""
-            - **Industry Standard:** Secure OAuth 2.0 flow
-            - **Data Isolation:** User-specific local database
-            - **Privacy First:** No tracking or data resale
-            """)
-            
-        with st.expander("⚙️ System Diagnostics"):
-            st.caption("Deployment Node: Streamlit Cloud")
-            st.code(f"Callback: {auth.redirect_uri}")
-            st.info("Ensure the Callback URI above matches your Cloud Console settings.")
+    auth = OAuthHandler()
+    google_url = auth._get_google_auth_url()
+    github_url = auth._get_github_auth_url()
 
-        st.markdown("""
-                <div style="margin-top: 3rem; border-top: 1px solid #334155; padding-top: 1rem;">
-                    <span style="color: #64748B; font-size: 0.8rem;">System Version v1.1.0-STABLE</span>
+    # We use a single markdown block for the entire UI to ensure layout stability
+    st.markdown(f"""
+        <div class="login-wrapper">
+            <div class="login-card">
+                <div class="login-logo">🤖</div>
+                <h1 class="login-title">JobPulse</h1>
+                <p class="login-subtitle">Premium Job Intelligence</p>
+                
+                <a href="{google_url}" target="_self" class="auth-btn">🔐 Sign in with Google</a>
+                <a href="{github_url}" target="_self" class="auth-btn">🔐 Sign in with GitHub</a>
+                
+                <p style="margin-top: 1rem;">
+                    <a href="?guest=true" class="guest-link">⚡ Skip & Continue as Guest</a>
+                </p>
+                
+                <div class="card-footer">
+                    INDUSTRIAL VERSION v1.1.2 • SECURE SESSION
                 </div>
             </div>
-        """, unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Handle the guest query parameter if clicked
+    if st.query_params.get("guest") == "true":
+        st.query_params.clear()
+        auth.guest_login()
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # DIAGNOSTICS in a standard Streamlit expander below the card
+    with st.expander("⚙️ System Diagnostics"):
+        st.code(f"Endpoint: {auth.redirect_uri}")
+        st.code(f"Env: {os.getenv('ENV', 'production')}")
+        st.info("Ensure the Endpoint matches your OAuth App configurations.")

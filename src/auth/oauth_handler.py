@@ -25,6 +25,9 @@ class ProductionOAuthHandler:
         raw_redirect = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8501")
         self.redirect_uri = raw_redirect.rstrip('/')
         
+        # LOGGING FOR DIAGNOSTICS
+        print(f"DEBUG: OAuthHandler initialized with redirect_uri: '{self.redirect_uri}'")
+        
         # OAuth endpoints
         self.google_auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
         self.google_token_url = "https://oauth2.googleapis.com/token"
