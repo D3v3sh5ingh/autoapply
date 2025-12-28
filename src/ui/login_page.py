@@ -8,109 +8,121 @@ from src.auth import OAuthHandler
 def show_login_page():
     """Display the login page with OAuth options."""
     
-    # Premium styling for login page
+    # Industrial styling for login page
     st.markdown("""
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
             
             html, body, [class*="css"] {
                 font-family: 'Inter', sans-serif;
+                background-color: #0F172A; /* Slate-950 */
+                color: #E2E8F0;
             }
             
             [data-testid="stSidebar"] {
                 display: none;
             }
             
-            .login-card {
-                background: rgba(255, 255, 255, 0.05);
+            .login-container {
+                max-width: 500px;
+                margin: 4rem auto;
                 padding: 3rem;
-                border-radius: 20px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(20px);
+                background: #1E293B; /* Slate-800 */
+                border-radius: 16px;
+                border: 1px solid #334155; /* Slate-700 */
                 text-align: center;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            }
+            
+            .login-logo {
+                font-size: 3.5rem;
+                margin-bottom: 1rem;
             }
             
             .login-title {
-                background: linear-gradient(90deg, #FF61D2 0%, #FE9090 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
+                color: #F8FAFC;
                 font-weight: 800;
                 font-size: 2.5rem !important;
-                margin-bottom: 0px;
+                margin-bottom: 0.5rem;
+                letter-spacing: -0.025em;
             }
             
-            .stButton>button {
-                border-radius: 12px;
-                height: 3rem;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                border: none;
-                background: linear-gradient(45deg, #6366f1, #a855f7);
-                color: white;
+            .login-subtitle {
+                color: #94A3B8;
+                font-size: 1.1rem;
+                margin-bottom: 3rem;
             }
             
-            .stButton>button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+            /* Industrial Buttons */
+            .stButton>button, .stLinkButton>a {
+                border-radius: 8px !important;
+                height: 3.5rem !important;
+                font-weight: 600 !important;
+                transition: all 0.2s !important;
+                border: 1px solid #334155 !important;
+                background-color: #0F172A !important;
+                color: #F1F5F9 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-decoration: none !important;
             }
+            
+            .stButton>button:hover, .stLinkButton>a:hover {
+                border-color: #38BDF8 !important;
+                color: #38BDF8 !important;
+                transform: translateY(-1px) !important;
+                background-color: rgba(56, 189, 248, 0.05) !important;
+                box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1) !important;
+            }
+            
+            /* Remove default streamlit button container gaps */
+            .element-container { margin-bottom: 0px !important; }
         </style>
     """, unsafe_allow_html=True)
     
-    # Centered login container
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # Centered design using st.columns for outer padding
+    _, main_col, _ = st.columns([1, 2, 1])
     
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        st.markdown('<h1 class="login-title">🤖 JobPulse Agent</h1>', unsafe_allow_html=True)
-        st.markdown("<p style='opacity: 0.8; font-size: 1.1rem;'>Your AI-Powered Job Search Assistant</p>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+    with main_col:
+        # Wrap the header in a styled div
+        st.markdown("""
+            <div class="login-container">
+                <div class="login-logo">🤖</div>
+                <h1 class="login-title">JobPulse Agent</h1>
+                <p class="login-subtitle">AI-Driven Job Search Intelligence</p>
+        """, unsafe_allow_html=True)
         
         auth = OAuthHandler()
         
-        st.markdown("#### Sign in to continue")
-        st.caption("Your personalized job search dashboard awaits")
+        # PROVIDER BUTTONS
+        auth.google_login("🔐 Sign in with Google")
+        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
+        auth.github_login("🔐 Sign in with GitHub")
+        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Google login button
-        col_g1, col_g2, col_g3 = st.columns([0.5, 2, 0.5])
-        with col_g2:
-            auth.google_login()
-        
-        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
-        
-        # GitHub login button  
-        col_gh1, col_gh2, col_gh3 = st.columns([0.5, 2, 0.5])
-        with col_gh2:
-            auth.github_login()
-        
-        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
-        
-        # Guest login button
-        col_gst1, col_gst2, col_gst3 = st.columns([0.5, 2, 0.5])
-        with col_gst2:
-            if st.button("⚡ Skip & Use as Guest", key="guest_login", use_container_width=True):
-                auth.guest_login()
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Info section
-        with st.expander("ℹ️ About OAuth Login"):
-            st.markdown("""
-            **🔐 Secure Authentication:**
-            - No passwords to remember
-            - Your data stays private and isolated
-            - Works with your existing Google/GitHub account
+        # GUEST BUTTON
+        if st.button("⚡ Continue as Guest", key="guest_login", use_container_width=True):
+            auth.guest_login()
             
-            **📊 Why Sign In:**
-            - Access your saved jobs and application history
-            - Track your progress over time
-            - Get personalized job recommendations
-            """)
+        st.markdown("<div style='height: 2rem'></div>", unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("🔒 Privacy-first • 100% open source • Your data, your control")
-        st.markdown('</div>', unsafe_allow_html=True)
+        # UTILITIES
+        with st.expander("🛡️ Enterprise Security"):
+            st.markdown("""
+            - **Industry Standard:** Secure OAuth 2.0 flow
+            - **Data Isolation:** User-specific local database
+            - **Privacy First:** No tracking or data resale
+            """)
+            
+        with st.expander("⚙️ System Diagnostics"):
+            st.caption("Deployment Node: Streamlit Cloud")
+            st.code(f"Callback: {auth.redirect_uri}")
+            st.info("Ensure the Callback URI above matches your Cloud Console settings.")
+
+        st.markdown("""
+                <div style="margin-top: 3rem; border-top: 1px solid #334155; padding-top: 1rem;">
+                    <span style="color: #64748B; font-size: 0.8rem;">System Version v1.1.0-STABLE</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)

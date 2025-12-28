@@ -52,6 +52,9 @@ def fix_ssl_paths():
         except: pass
 
 fix_ssl_paths()
+# PRINT DETECTED PATH TO LOGS (for cloud debugging)
+print(f"DIAGNOSTIC: REQUESTS_CA_BUNDLE = {os.environ.get('REQUESTS_CA_BUNDLE', 'NOT SET')}")
+print(f"DIAGNOSTIC: SSL_CERT_FILE = {os.environ.get('SSL_CERT_FILE', 'NOT SET')}")
 
 import streamlit as st
 import pandas as pd
@@ -70,9 +73,13 @@ from src.scraper.naukri_scraper import NaukriScraper
 from src.scraper.linkedin_scraper import LinkedInScraper
 from src.database.models import Job, Profile
 
+# BUILD INFORMATION (for troubleshooting updates)
+BUILD_VERSION = "1.0.5-FINAL-SSL-FIX"
+BUILD_TIME = "2025-12-28 20:00"
+
 # STREAMLIT PAGE CONFIG (must be first Streamlit command)
 st.set_page_config(
-    page_title="JobPulse Agent",
+    page_title=f"JobPulse Agent (v{BUILD_VERSION})",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -81,65 +88,90 @@ st.set_page_config(
 # PREMIUM UI STYLING
 st.markdown("""
     <style>
-    /* Main Background & Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    /* Industrial/Professional Theme (Slate/Zinc) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
+        color: #E2E8F0; /* Slate-200 */
     }
     
-    /* Sexy Heading Gradients */
+    /* Sleek Professional Title */
     .main-title {
-        background: linear-gradient(90deg, #FF61D2 0%, #FE9090 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #F8FAFC; /* Slate-50 */
         font-weight: 800;
-        font-size: 3rem !important;
-        margin-bottom: 0.5rem;
+        font-size: 2.5rem !important;
+        letter-spacing: -0.025em;
+        margin-bottom: 0px;
+        border-left: 4px solid #38BDF8; /* Sky Blue Accent */
+        padding-left: 1rem;
     }
     
-    /* Card/Metric Styling */
+    /* Industrial Cards */
     [data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 1rem;
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
+        background: #1E293B; /* Slate-800 */
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid #334155; /* Slate-700 */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background-color: #0E1117;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+        border-bottom: 1px solid #334155;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 3.5rem;
+        font-weight: 600;
+        color: #94A3B8;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #38BDF8 !important;
+        border-bottom-color: #38BDF8 !important;
     }
     
-    /* Button Hover Effects */
+    /* Production-Grade Buttons */
     .stButton>button {
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        border: none;
-        background: linear-gradient(45deg, #6366f1, #a855f7);
-        color: white;
+        border-radius: 8px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #334155;
+        background-color: #1E293B;
+        color: #F1F5F9;
+        font-weight: 500;
+        height: 3rem;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
-        background: linear-gradient(45deg, #4f46e5, #9333ea);
+        border-color: #38BDF8;
+        color: #38BDF8;
+        background-color: rgba(56, 189, 248, 0.05);
+        transform: translateY(-1px);
     }
     
-    /* Footer Styling */
-    .dev-footer {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.5);
+    /* Sidebar Cleanup */
+    [data-testid="stSidebar"] {
+        background-color: #0F172A; /* Slate-900 */
+        border-right: 1px solid #1E293B;
     }
-    .dev-footer a {
-        color: #FE9090;
-        text-decoration: none;
-        font-weight: 600;
+    
+    /* Form Inputs */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: #0F172A;
+        border: 1px solid #334155;
+        color: #F8FAFC;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0F172A;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -212,9 +244,10 @@ def main():
                 auth.logout()
                 st.rerun()
         st.divider()
+        st.caption(f"Build: {BUILD_VERSION} | {BUILD_TIME}")
         st.markdown(
             """
-            <div style='text-align: center; padding: 1rem; opacity: 0.7;'>
+            <div style='text-align: center; padding: 0.5rem; opacity: 0.5;'>
                 Developed with ❤️ by <br>
                 <a href='https://d3v3sh5ingh.github.io/deveshsingh.ml' target='_blank' style='color: #FE9090; font-weight: bold; text-decoration: none;'>Devesh Singh</a>
             </div>

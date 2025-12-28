@@ -115,35 +115,29 @@ class ProductionOAuthHandler:
             if key in st.session_state:
                 del st.session_state[key]
     
-    def google_login(self):
-        """Initiate Google OAuth flow."""
+    def google_login(self, label="🔐 Sign in with Google"):
+        """Show Google login button (opens in new tab to avoid CSP issues)."""
         if not self.google_client_id or not self.google_client_secret:
             st.error("⚠️ Google OAuth not configured. Add credentials to .env")
             return False
         
-        # Query params handled by handle_callback() now
-        
-        # Generate OAuth URL
-        if st.button("🔐 Sign in with Google", key="google_login", use_container_width=True):
-            st.session_state.auth_provider_pending = 'google'
-            auth_url = self._get_google_auth_url()
-            st.markdown(f'<meta http-equiv="refresh" content="0;url={auth_url}">', unsafe_allow_html=True)
-            return True
+        st.session_state.auth_provider_pending = 'google'
+        auth_url = self._get_google_auth_url()
+        # Streamlit link_button opens in a new tab by default
+        st.link_button(label, auth_url, type="secondary", use_container_width=True)
+        return True
     
-    def github_login(self):
-        """Initiate GitHub OAuth flow."""
+    def github_login(self, label="🔐 Sign in with GitHub"):
+        """Show GitHub login button (opens in new tab to avoid CSP issues)."""
         if not self.github_client_id or not self.github_client_secret:
             st.error("⚠️ GitHub OAuth not configured. Add credentials to .env")
             return False
         
-        # Query params handled by handle_callback() now
-
-        # Generate OAuth URL
-        if st.button("🔐 Sign in with GitHub", key="github_login", use_container_width=True):
-            st.session_state.auth_provider_pending = 'github'
-            auth_url = self._get_github_auth_url()
-            st.markdown(f'<meta http-equiv="refresh" content="0;url={auth_url}">', unsafe_allow_html=True)
-            return True
+        st.session_state.auth_provider_pending = 'github'
+        auth_url = self._get_github_auth_url()
+        # Streamlit link_button opens in a new tab by default
+        st.link_button(label, auth_url, type="secondary", use_container_width=True)
+        return True
     
     def _get_google_auth_url(self):
         """Generate Google OAuth authorization URL."""
