@@ -95,17 +95,41 @@ def show_login_page():
             google_url = auth.get_google_auth_url_only()
             github_url = auth.get_github_auth_url_only()
             
-            # Google Login
+            # Custom button styles
+            st.markdown("""
+            <style>
+                .oauth-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    padding: 0.75rem;
+                    margin-bottom: 0.5rem;
+                    background-color: #0f172a;
+                    border: 1px solid #334155;
+                    border-radius: 8px;
+                    color: #f8fafc;
+                    text-decoration: none;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                }
+                .oauth-btn:hover {
+                    border-color: #6366f1;
+                    color: #6366f1;
+                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+                }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # Google Login via standard HTML link (target="_top" escapes iframe sandbox)
             if google_url:
-                st.link_button("🔐 Sign in with Google", google_url, use_container_width=True)
+                st.markdown(f'<a href="{google_url}" target="_top" class="oauth-btn">🔐 Sign in with Google</a>', unsafe_allow_html=True)
             else:
                 st.error("Google OAuth not configured")
                 
-            st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
-            
             # GitHub Login
             if github_url:
-                st.link_button("🔐 Sign in with GitHub", github_url, use_container_width=True)
+                st.markdown(f'<a href="{github_url}" target="_top" class="oauth-btn">🔐 Sign in with GitHub</a>', unsafe_allow_html=True)
             else:
                 st.error("GitHub OAuth not configured")
                 

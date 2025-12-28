@@ -53,6 +53,10 @@ class ProductionOAuthHandler:
         
     def handle_callback(self):
         """Check if we're currently in an OAuth callback flow and process it."""
+        # 0. Avoid double-processing if already authenticated
+        if self.is_authenticated():
+            return True
+            
         # Log to console for real-time debugging
         print(f"DEBUG: handle_callback triggered. Query params: {st.query_params}")
         
@@ -243,7 +247,11 @@ class ProductionOAuthHandler:
             return True
             
         except Exception as e:
-            st.error(f"OAuth failed: {e}")
+            error_details = ""
+            if isinstance(e, requests.exceptions.HTTPError) and e.response is not None:
+                error_details = f" - Server response: {e.response.text}"
+            st.error(f"OAuth failed: {e}{error_details}")
+            print(f"ERROR: Google OAuth failed: {e}{error_details}")
             return False
     
     def _handle_github_callback(self, code: str):
@@ -299,7 +307,11 @@ class ProductionOAuthHandler:
             return True
             
         except Exception as e:
-            st.error(f"OAuth failed: {e}")
+            error_details = ""
+            if isinstance(e, requests.exceptions.HTTPError) and e.response is not None:
+                error_details = f" - Server response: {e.response.text}"
+            st.error(f"OAuth failed: {e}{error_details}")
+            print(f"ERROR: GitHub OAuth failed: {e}{error_details}")
             return False
 
     def guest_login(self):
