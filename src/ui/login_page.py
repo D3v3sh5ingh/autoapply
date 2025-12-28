@@ -46,6 +46,14 @@ def show_login_page():
         with col_gh2:
             auth.github_login()
         
+        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
+        
+        # Guest login button
+        col_gst1, col_gst2, col_gst3 = st.columns([0.5, 2, 0.5])
+        with col_gst2:
+            if st.button("⚡ Skip & Use as Guest", key="guest_login", use_container_width=True):
+                auth.guest_login()
+        
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Info section

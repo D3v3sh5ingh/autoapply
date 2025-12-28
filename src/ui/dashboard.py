@@ -54,7 +54,17 @@ def main():
         print(f"DB Init Warning: {e}")
     
     # === AUTHENTICATION GATE ===
+    # Set dev mode in session state if ENV is dev
+    is_dev = os.getenv("ENV") == "dev"
+    if is_dev:
+        st.session_state.is_dev = True
+        
     auth = OAuthHandler()
+    
+    # Process any incoming OAuth callbacks before checking state
+    if auth.handle_callback():
+        return
+        
     if not auth.is_authenticated():
         show_login_page()
         return
@@ -127,14 +137,14 @@ def main():
                 except Exception as e:
                     st.error(f"Resume Error: {e}")
 
-            default_skills = "Python, SQL, PySpark, Snowflake, AWS"
-            skills_input = st.text_area("Skills (comma separated)", default_skills)
+            default_skills = ""
+            skills_input = st.text_area("Skills (comma separated)", default_skills, placeholder="e.g. Java, Spring Boot, SQL")
             skills = [s.strip() for s in skills_input.split(",") if s.strip()]
 
         st.divider()
         
         st.subheader("🔎 Search Criteria")
-        query = st.text_input("Job Role", "Data Engineer")
+        query = st.text_input("Job Role", "", placeholder="e.g. Software Developer")
         location = st.text_input("Location", "Remote")
         if not location:
             st.warning("⚠️ Please enter a location (e.g., 'Remote', 'India')")
@@ -330,6 +340,9 @@ def main():
                         st.success(f"Applied on {app.date_applied.strftime('%Y-%m-%d')} ({app.status})")
                     
                 with col2:
+                    # Unique identifier for keys (fallback to URL hash if ID is missing)
+                    job_key = job.id if job.id else f"tmp_{hash(job.url)}"
+                    
                     # Match Score
                     score = int(job.match_score) if job.match_score else 0
                     if score > 0:
@@ -340,21 +353,21 @@ def main():
                     if not is_applied:
                         c1, c2, c3 = st.columns([1, 1, 0.5])
                         with c1:
-                            if st.button("🤖 Auto Apply", key=f"auto_{job.id}"):
+                            if st.button("🤖 Auto Apply", key=f"auto_{job_key}"):
                                 run_single_apply(job, name, skills, resume_text)
                                 st.rerun()
                         with c2:
-                            if st.button("✅ Mark Done", key=f"manual_{job.id}", help="Mark as applied manually"):
+                            if st.button("✅ Mark Done", key=f"manual_{job_key}", help="Mark as applied manually"):
                                 mark_job_applied(job.id, user_id, status="manual")
                                 st.toast(f"Marked {job.company} as Applied!")
                                 st.rerun()
                         with c3:
-                            if st.button("🗑️", key=f"del_{job.id}", help="Delete this job"):
+                            if st.button("🗑️", key=f"del_{job_key}", help="Delete this job"):
                                 delete_job(job.id, user_id)
                                 st.rerun()
                     else:
                          # Even if applied, allow delete if user wants to clean history
-                         if st.button("🗑️ Delete Record", key=f"del_app_{job.id}"):
+                         if st.button("🗑️ Delete Record", key=f"del_app_{job_key}"):
                              delete_job(job.id, user_id)
                              st.rerun()
                 st.divider()
@@ -484,19 +497,41 @@ def run_single_apply(job, name, skills, resume_text, resume_path, phone, user_id
 
 def run_search(query, location, skills, resume_text, resume_path, phone, use_mock, use_instahyre, use_hn, use_semantic, use_naukri, use_linkedin, use_smart_search, use_arbeitnow, email_enabled, email_user, email_pass, user_id, limit=10):
     # SMART SEARCH LOGIC
-    queries = [query]
+    queries = [query] if query else []
+    
     if use_smart_search:
-        q_lower = query.lower()
-        if "data engineer" in q_lower:
-            queries.extend(["Spark Developer", "Big Data Engineer", "Python Data Engineer", "ETL Developer"])
-        elif "data scientist" in q_lower:
-            queries.extend(["Machine Learning Engineer", "AI Engineer", "Data Analyst"])
-        elif "frontend" in q_lower or "react" in q_lower:
-            queries.extend(["React Developer", "UI Engineer", "Javascript Developer"])
-        elif "backend" in q_lower or "python" in q_lower:
-            queries.extend(["Python Developer", "Django Developer", "Backend Engineer"])
-        elif "full stack" in q_lower:
-             queries.extend(["Full Stack Developer", "Software Engineer"])
+        # 1. Expand based on common roles
+        if query:
+            q_lower = query.lower()
+            if "data engineer" in q_lower:
+                queries.extend(["Spark Developer", "Big Data Engineer", "ETL Developer"])
+            elif "data scientist" in q_lower:
+                queries.extend(["Machine Learning Engineer", "AI Engineer"])
+            elif "frontend" in q_lower or "react" in q_lower:
+                queries.extend(["React Developer", "UI Engineer"])
+            elif "backend" in q_lower or "python" in q_lower:
+                queries.extend(["Backend Engineer", "Django Developer"])
+            elif "full stack" in q_lower:
+                queries.extend(["Full Stack Developer", "Software Engineer"])
+            elif "java" in q_lower or "software" in q_lower:
+                queries.extend(["Java Developer", "Software Engineer", "Systems Engineer"])
+            elif "devops" in q_lower or "sre" in q_lower:
+                queries.extend(["Site Reliability Engineer", "Platform Engineer", "Cloud Engineer"])
+
+        # 2. Integrate top user skills into search
+        if skills:
+            # Add top 2 skills to queries to broaden search
+            for skill in skills[:2]:
+                if query:
+                    queries.append(f"{query} {skill}")
+                else:
+                    queries.append(f"{skill} Developer")
+            
+    # Ensure we have at least something to search
+    if not queries and skills:
+        queries = [f"{skills[0]} Developer"]
+    elif not queries:
+        queries = ["Software Developer"] # Generic fallback
             
     # Setup
     profile = Profile(name="User", skills=skills, resume_text=resume_text, resume_path=resume_path, phone=phone)

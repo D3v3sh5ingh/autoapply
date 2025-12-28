@@ -7,7 +7,10 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Foreign
 from sqlalchemy.orm import sessionmaker, scoped_session
 from src.database.models import Base
 
-DATABASE_URL = "sqlite:///./autoapply.db"
+import os
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DATABASE_URL = f"sqlite:///{os.path.join(DATA_DIR, 'users.db')}"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
@@ -22,8 +25,8 @@ class UserUsage(Base):
 class RateLimiter:
     """Manages usage quotas and rate limits per user."""
     
-    DAILY_SEARCH_LIMIT = 20
-    SEARCH_COOLDOWN_SECONDS = 60
+    DAILY_SEARCH_LIMIT = 40
+    SEARCH_COOLDOWN_SECONDS = 15
     
     def __init__(self, user_id: int):
         self.user_id = user_id
