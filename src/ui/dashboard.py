@@ -68,7 +68,13 @@ def main():
         user_id = st.session_state.user_id
 
     st.title("🤖 JobPulse Agent")
-    st.caption(f"Welcome back, {user_info['name']} • {user_info['email']}")
+    
+    # Guest mode banner
+    if st.session_state.get('is_guest', False):
+        st.warning("⚡ **Guest Mode** - Your data will be lost when you close the browser. [Login now](#) to save your progress.")
+        st.caption("Using temporary session - no data will be saved to database")
+    else:
+        st.caption(f"Welcome back, {user_info['name']} • {user_info['email']}")
     
     # TABS
     tab_search, tab_history, tab_analytics = st.tabs(["🔍 Search & Apply", "📊 History & Tracking", "📈 Analytics"])
@@ -568,9 +574,12 @@ def run_search(query, location, skills, resume_text, resume_path, phone, use_moc
                 st.toast("❌ Email failed. Check credentials.")
                 search_log.append("❌ Email Notification failed.")
 
-    # Save to DB
-    saved_count = save_jobs(matched_jobs, user_id)
-    search_log.append(f"💾 Saved {saved_count} new unique jobs to Database.")
+    # Save to DB (skip for guest users)
+    if not st.session_state.get('is_guest', False):
+        saved_count = save_jobs(matched_jobs, user_id)
+        search_log.append(f"💾 Saved {saved_count} new unique jobs to Database.")
+    else:
+        search_log.append(f"⚡ Guest Mode: Found {len(matched_jobs)} jobs (not saved)")
     
     st.session_state['results'] = matched_jobs
     st.session_state['search_log'] = search_log

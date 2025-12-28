@@ -46,16 +46,30 @@ def show_login_page():
         with col_gh2:
             auth.github_login()
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
         # Info section
-        with st.expander("ℹ️ Why OAuth?"):
+        with st.expander("ℹ️ Login vs Guest Mode"):
             st.markdown("""
-            - **Secure**: No passwords stored
-            - **Simple**: One-click login
-            - **Private**: Your data stays isolated
-            - **Fast**: Skip signup forms
+            **🔐 Login (Recommended):**
+            - Your data persists across sessions
+            - History, analytics, and settings saved
+            - Track your applications over time
+            
+            **👤 Guest Mode:**
+            - Use the app immediately
+            - Data exists only in this session
+            - Everything resets when you close the browser
             """)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Guest mode option
+        if st.button("⚡ Skip & Use as Guest", use_container_width=True):
+            # Create temporary guest session
+            auth._demo_login("guest_temp")
+            st.session_state.is_guest = True
+            st.rerun()
         
         st.markdown("<br>", unsafe_allow_html=True)
         st.caption("🔒 Privacy-first • 100% open source • Your data, your control")
