@@ -8,11 +8,51 @@ from src.auth import OAuthHandler
 def show_login_page():
     """Display the login page with OAuth options."""
     
-    # Hide sidebar on login page
+    # Premium styling for login page
     st.markdown("""
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+            
+            html, body, [class*="css"] {
+                font-family: 'Inter', sans-serif;
+            }
+            
             [data-testid="stSidebar"] {
                 display: none;
+            }
+            
+            .login-card {
+                background: rgba(255, 255, 255, 0.05);
+                padding: 3rem;
+                border-radius: 20px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(20px);
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            }
+            
+            .login-title {
+                background: linear-gradient(90deg, #FF61D2 0%, #FE9090 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-weight: 800;
+                font-size: 2.5rem !important;
+                margin-bottom: 0px;
+            }
+            
+            .stButton>button {
+                border-radius: 12px;
+                height: 3rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                border: none;
+                background: linear-gradient(45deg, #6366f1, #a855f7);
+                color: white;
+            }
+            
+            .stButton>button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
             }
         </style>
     """, unsafe_allow_html=True)
@@ -23,8 +63,9 @@ def show_login_page():
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("# 🤖 JobPulse Agent")
-        st.markdown("### Your AI-Powered Job Search Assistant")
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown('<h1 class="login-title">🤖 JobPulse Agent</h1>', unsafe_allow_html=True)
+        st.markdown("<p style='opacity: 0.8; font-size: 1.1rem;'>Your AI-Powered Job Search Assistant</p>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         
         auth = OAuthHandler()
@@ -72,3 +113,4 @@ def show_login_page():
         
         st.markdown("<br>", unsafe_allow_html=True)
         st.caption("🔒 Privacy-first • 100% open source • Your data, your control")
+        st.markdown('</div>', unsafe_allow_html=True)

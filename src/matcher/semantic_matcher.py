@@ -10,10 +10,10 @@ class SemanticMatcher(BaseMatcher):
     def __init__(self):
         super().__init__()
         self.model = None
-        # FORCE SSL CERTIFICATE PATH
-        cert_path = certifi.where()
-        os.environ['REQUESTS_CA_BUNDLE'] = cert_path
-        os.environ['SSL_CERT_FILE'] = cert_path
+        # SSL Certificate path is handled globally in dashboard.py
+        # but we print it here for confirmation
+        cert_path = os.environ.get('REQUESTS_CA_BUNDLE', certifi.where())
+        print(f"Loading Semantic Model with certs at: {cert_path}")
         
         # Load a efficient, small model suitable for local CPU
         print(f"Loading Semantic Model (all-MiniLM-L6-v2) with certs at: {cert_path}")

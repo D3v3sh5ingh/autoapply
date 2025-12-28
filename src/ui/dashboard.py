@@ -7,14 +7,51 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# CRITICAL FIX: Force correct SSL Certificate path before any other imports
-try:
-    import certifi
-    cert_path = certifi.where()
-    os.environ['REQUESTS_CA_BUNDLE'] = cert_path
-    os.environ['SSL_CERT_FILE'] = cert_path
-except: 
-    pass
+# CRITICAL SSL FIX: Force correct SSL Certificate path
+def fix_ssl_paths():
+    import os
+    import sys
+    import platform
+    
+    try:
+        import certifi
+        cert_path = certifi.where()
+    except:
+        cert_path = ""
+
+    # Check if the path is valid. If not, try to find one.
+    if not cert_path or not os.path.exists(cert_path):
+        if platform.system() == 'Windows':
+            # Common Windows paths for common python versions
+            fallbacks = [
+                os.path.join(sys.prefix, "Lib", "site-packages", "certifi", "cacert.pem"),
+                r"C:\Python312\Lib\site-packages\certifi\cacert.pem",
+                r"C:\Program Files\Python312\Lib\site-packages\certifi\cacert.pem"
+            ]
+        else:
+            # Common Linux paths
+            fallbacks = [
+                "/etc/ssl/certs/ca-certificates.crt",
+                "/etc/pki/tls/certs/ca-bundle.crt",
+                "/etc/ssl/ca-bundle.pem",
+                "/usr/local/lib/python3.11/site-packages/certifi/cacert.pem"
+            ]
+        
+        for f in fallbacks:
+            if os.path.exists(f):
+                cert_path = f
+                break
+    
+    if cert_path and os.path.exists(cert_path):
+        os.environ['REQUESTS_CA_BUNDLE'] = cert_path
+        os.environ['SSL_CERT_FILE'] = cert_path
+        # Also fix up urllib3 if it's already loaded
+        try:
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+        except: pass
+
+fix_ssl_paths()
 
 import streamlit as st
 import pandas as pd
@@ -34,7 +71,78 @@ from src.scraper.linkedin_scraper import LinkedInScraper
 from src.database.models import Job, Profile
 
 # STREAMLIT PAGE CONFIG (must be first Streamlit command)
-st.set_page_config(page_title="JobPulse Agent", layout="wide")
+st.set_page_config(
+    page_title="JobPulse Agent",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# PREMIUM UI STYLING
+st.markdown("""
+    <style>
+    /* Main Background & Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Sexy Heading Gradients */
+    .main-title {
+        background: linear-gradient(90deg, #FF61D2 0%, #FE9090 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        font-size: 3rem !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Card/Metric Styling */
+    [data-testid="stMetric"] {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #0E1117;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Button Hover Effects */
+    .stButton>button {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: none;
+        background: linear-gradient(45deg, #6366f1, #a855f7);
+        color: white;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        background: linear-gradient(45deg, #4f46e5, #9333ea);
+    }
+    
+    /* Footer Styling */
+    .dev-footer {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+    .dev-footer a {
+        color: #FE9090;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Auth and Multi-User Support
 from src.auth import OAuthHandler
@@ -80,7 +188,7 @@ def main():
     else:
         user_id = st.session_state.user_id
 
-    st.title("🤖 JobPulse Agent")
+    st.markdown('<h1 class="main-title">🤖 JobPulse Agent</h1>', unsafe_allow_html=True)
     
     # Guest mode banner
     if st.session_state.get('is_guest', False):
@@ -103,6 +211,16 @@ def main():
             if st.button("⎋"):  # Logout symbol
                 auth.logout()
                 st.rerun()
+        st.divider()
+        st.markdown(
+            """
+            <div style='text-align: center; padding: 1rem; opacity: 0.7;'>
+                Developed with ❤️ by <br>
+                <a href='https://d3v3sh5ingh.github.io/deveshsingh.ml' target='_blank' style='color: #FE9090; font-weight: bold; text-decoration: none;'>Devesh Singh</a>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
         
         # Daily quota
         limiter = RateLimiter(user_id)
