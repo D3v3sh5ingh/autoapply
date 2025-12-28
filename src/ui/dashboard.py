@@ -52,9 +52,6 @@ def fix_ssl_paths():
         except: pass
 
 fix_ssl_paths()
-# PRINT DETECTED PATH TO LOGS (for cloud debugging)
-print(f"DIAGNOSTIC: REQUESTS_CA_BUNDLE = {os.environ.get('REQUESTS_CA_BUNDLE', 'NOT SET')}")
-print(f"DIAGNOSTIC: SSL_CERT_FILE = {os.environ.get('SSL_CERT_FILE', 'NOT SET')}")
 
 import streamlit as st
 import pandas as pd
@@ -88,78 +85,71 @@ st.set_page_config(
 # PREMIUM UI STYLING
 st.markdown("""
     <style>
-    /* Industrial/Professional Theme (Slate/Zinc) */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    /* Professional Slate & Indigo Theme */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        color: #E2E8F0; /* Slate-200 */
+    }
+
+    /* Main Container Padding */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
     }
     
-    /* Sleek Professional Title */
+    /* Sleek Professional Header */
     .main-title {
-        color: #F8FAFC; /* Slate-50 */
-        font-weight: 800;
-        font-size: 2.5rem !important;
+        color: #f8fafc;
+        font-weight: 700;
+        font-size: 2.25rem !important;
+        margin-bottom: 1rem;
         letter-spacing: -0.025em;
-        margin-bottom: 0px;
-        border-left: 4px solid #38BDF8; /* Sky Blue Accent */
-        padding-left: 1rem;
     }
     
-    /* Industrial Cards */
+    /* Card / Metric Styling */
     [data-testid="stMetric"] {
-        background: #1E293B; /* Slate-800 */
+        background: #1e293b;
         padding: 1.25rem;
         border-radius: 12px;
-        border: 1px solid #334155; /* Slate-700 */
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #334155;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #0f172a;
+        border-right: 1px solid #1e293b;
     }
     
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        border-bottom: 1px solid #334155;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 3.5rem;
-        font-weight: 600;
-        color: #94A3B8;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #38BDF8 !important;
-        border-bottom-color: #38BDF8 !important;
-    }
-    
-    /* Production-Grade Buttons */
+    /* Button Styling - Professional Slate/Indigo */
     .stButton>button {
         border-radius: 8px;
+        font-weight: 500;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid #334155;
-        background-color: #1E293B;
-        color: #F1F5F9;
-        font-weight: 500;
-        height: 3rem;
+        background-color: #1e293b;
+        color: #f8fafc;
     }
     
     .stButton>button:hover {
-        border-color: #38BDF8;
-        color: #38BDF8;
-        background-color: rgba(56, 189, 248, 0.05);
-        transform: translateY(-1px);
+        border-color: #6366f1;
+        color: #6366f1;
+        background-color: #1e293b;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
-    
-    /* Sidebar Cleanup */
-    [data-testid="stSidebar"] {
-        background-color: #0F172A; /* Slate-900 */
-        border-right: 1px solid #1E293B;
+
+    /* Primary Style Buttons */
+    div.stButton > button:first-child[kind="primary"] {
+        background-color: #6366f1;
+        border-color: #6366f1;
+        color: white;
     }
-    
-    /* Form Inputs */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-        background-color: #0F172A;
-        border: 1px solid #334155;
-        color: #F8FAFC;
+
+    div.stButton > button:first-child[kind="primary"]:hover {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+        color: white;
     }
     
     /* Scrollbar */
@@ -167,11 +157,14 @@ st.markdown("""
         width: 8px;
     }
     ::-webkit-scrollbar-track {
-        background: #0F172A;
+        background: #0f172a;
     }
     ::-webkit-scrollbar-thumb {
         background: #334155;
-        border-radius: 10px;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -234,26 +227,6 @@ def main():
     
     with st.sidebar:
         st.header("⚙️ Configuration")
-        
-        # User context + logout
-        col_u, col_l = st.columns([3, 1])
-        with col_u:
-            st.caption(f"👤 {user_info['email']}")
-        with col_l:
-            if st.button("⎋"):  # Logout symbol
-                auth.logout()
-                st.rerun()
-        st.divider()
-        st.caption(f"Build: {BUILD_VERSION} | {BUILD_TIME}")
-        st.markdown(
-            """
-            <div style='text-align: center; padding: 0.5rem; opacity: 0.5;'>
-                Developed with ❤️ by <br>
-                <a href='https://d3v3sh5ingh.github.io/deveshsingh.ml' target='_blank' style='color: #FE9090; font-weight: bold; text-decoration: none;'>Devesh Singh</a>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
         
         # Daily quota
         limiter = RateLimiter(user_id)
@@ -338,6 +311,28 @@ def main():
                            use_linkedin, use_smart_search, use_arbeitnow,
                            email_enabled, email_user, email_pass, user_id, search_limit)
 
+        st.divider()
+        
+        # Logout & User Context moved to bottom
+        col_u, col_l = st.columns([4, 1])
+        with col_u:
+            st.caption(f"👤 {user_info['email']}")
+        with col_l:
+            if st.button("⎋", help="Logout"):
+                auth.logout()
+                st.rerun()
+        
+        st.caption(f"Build: {BUILD_VERSION} | {BUILD_TIME}")
+        st.markdown(
+            """
+            <div style='text-align: center; padding: 0.5rem; opacity: 0.5;'>
+                Developed with ❤️ by <br>
+                <a href='https://d3v3sh5ingh.github.io/deveshsingh.ml' target='_blank' style='color: #6366f1; font-weight: bold; text-decoration: none;'>Devesh Singh</a>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
     # --- TAB 1: SEARCH ---
     with tab_search:
         st.info("Configure your profile on the left and click 'Find Relevant Jobs'.")
