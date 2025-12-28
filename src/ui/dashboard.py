@@ -222,10 +222,19 @@ def main():
     with tab_history:
         st.markdown("### 🗄️ Job Database")
         
-        # Controls Row
-        col_sort, col_filter, col_refresh = st.columns([2, 2, 1])
+        # For guest users, use session data instead of DB
+        is_guest = st.session_state.get('is_guest', False)
         
-        saved = get_saved_jobs(user_id)
+        if is_guest:
+            # Guest mode: show current session results only
+            saved = st.session_state.get('results', [])
+            if not saved:
+                st.info("⚡ **Guest Mode:** Search for jobs to see them here. Data won't persist after browser close.")
+                return
+            st.caption("⚡ Showing session data only (not saved to database)")
+        else:
+            # Logged in: query database
+            saved = get_saved_jobs(user_id)
         
         # Extract unique locations for filter
         unique_locs = sorted(list(set([j.location for j in saved if j.location])))
@@ -345,7 +354,17 @@ def main():
     with tab_analytics:
         st.markdown("### 🧠 Smart Insights & Gaps")
         
-        saved = get_saved_jobs(user_id)
+        # For guest users, use session data
+        is_guest = st.session_state.get('is_guest', False)
+        if is_guest:
+            saved = st.session_state.get('results', [])
+            if not saved:
+                st.info("⚡ **Guest Mode:** Run a search to see analytics. Data won't persist.")
+                return
+            st.caption("⚡ Analyzing current session data only")
+        else:
+            saved = get_saved_jobs(user_id)
+        
         if not saved:
             st.info("No data yet. Run some searches to generate insights!")
         else:
