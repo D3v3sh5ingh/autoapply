@@ -236,6 +236,9 @@ def main():
             # Logged in: query database
             saved = get_saved_jobs(user_id)
         
+        # Controls Row (after we have data)
+        col_sort, col_filter, col_refresh = st.columns([2, 2, 1])
+        
         # Extract unique locations for filter
         unique_locs = sorted(list(set([j.location for j in saved if j.location])))
         
