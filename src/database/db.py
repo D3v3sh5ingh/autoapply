@@ -2,11 +2,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, joinedload
 from .models import Base, Job, Application, User
 from datetime import datetime
+import os
 
-# Use absolute path for DB to avoid file not found issues in complex envs if needed, 
-# but relative is fine for this project structure usually.
-DATABASE_URL = "sqlite:///./autoapply.db"
+# Use persistent volume for data (Fly.io mounts at /data)
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
+def get_user_db_path(user_id: int) -> str:
+    """Get database path for specific user."""
+    user_dir = os.path.join(DATA_DIR, f"user_{user_id}")
+    os.makedirs(user_dir, exist_ok=True)
+    return f"sqlite:///{os.path.join(user_dir, 'jobs.db')}"
+
+# Main DB for user accounts only
+DATABASE_URL = f"sqlite:///{os.path.join(DATA_DIR, 'users.db')}"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
@@ -51,10 +60,16 @@ def get_user_by_id(user_id: int):
 
 def save_jobs(jobs_list, user_id: int):
     """
-    Saves a list of jobs to the DB for specific user, ignoring duplicates based on URL.
+    Saves a list of jobs to the user's DB, ignoring duplicates based on URL.
     Returns: Number of new jobs added.
     """
-    session = SessionLocal()
+    # Get user-specific DB engine
+    user_db_url = get_user_db_path(user_id)
+    user_engine = create_engine(user_db_url, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=user_engine)  # Ensure tables exist
+    UserSession = scoped_session(sessionmaker(bind=user_engine))
+    
+    session = UserSession()
     count = 0
     try:
         for job_data in jobs_list:
@@ -84,7 +99,11 @@ def mark_job_applied(job_id: int, user_id: int, status="applied", notes=None):
     Marks a job as applied by creating an Application record.
     Returns: True if successful or already applied, False on error.
     """
-    session = SessionLocal()
+    user_db_url = get_user_db_path(user_id)
+    user_engine = create_engine(user_db_url, connect_args={"check_same_thread": False})
+    UserSession = scoped_session(sessionmaker(bind=user_engine))
+    
+    session = UserSession()
     try:
         # Check if already applied
         exists = session.query(Application).filter_by(job_id=job_id, user_id=user_id).first()
@@ -104,7 +123,11 @@ def get_saved_jobs(user_id: int):
     """
     Returns all jobs for specific user, eager loading the 'applications' relationship.
     """
-    session = SessionLocal()
+    user_db_url = get_user_db_path(user_id)
+    user_engine = create_engine(user_db_url, connect_args={"check_same_thread": False})
+    UserSession = scoped_session(sessionmaker(bind=user_engine))
+    
+    session = UserSession()
     try:
         # Eager load applications to avoid DetachedInstanceError when accessing job.applications later
         return session.query(Job).filter_by(user_id=user_id).options(joinedload(Job.applications)).order_by(Job.date_posted.desc()).all()

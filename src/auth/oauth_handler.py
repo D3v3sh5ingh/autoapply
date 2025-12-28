@@ -41,31 +41,33 @@ class OAuthHandler:
                 del st.session_state[key]
                 
     def google_login(self):
-        """Initiate Google OAuth flow or use demo mode."""
-        # Demo mode is default - no setup needed for personal use
-        if st.button("🔐 Sign in with Google (Demo Mode)", key="google_demo", use_container_width=True):
-            self._demo_login("google")
-            return True
+        """Initiate Google OAuth flow."""
+        if not self.google_client_id or not self.google_client_secret:
+            st.error("⚠️ **OAuth Required**: Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to environment variables.")
+            st.info("See `.env.example` for setup instructions")
+            return False
+        
+        # TODO: Implement real OAuth flow
+        # For now, using simplified approach
+        st.info("🔐 Google OAuth: Click to sign in")
+        if st.button("Sign in with Google", key="google_real", use_container_width=True):
+            # Placeholder - integrate with actual OAuth library
+            st.error("Real OAuth not yet integrated. Please set up OAuth credentials first.")
+            return False
             
     def github_login(self):
-        """Initiate GitHub OAuth flow or use demo mode."""
-        # Demo mode is default - no setup needed for personal use
-        if st.button("🔐 Sign in with GitHub (Demo Mode)", key="github_demo", use_container_width=True):
-            self._demo_login("github")
-            return True
-            
-    def _demo_login(self, provider: str):
-        """Demo login for development/testing without real OAuth."""
-        # Generate a unique demo user based on timestamp
-        user_id = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+        """Initiate GitHub OAuth flow."""
+        if not self.github_client_id or not self.github_client_secret:
+            st.error("⚠️ **OAuth Required**: Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to environment variables.")
+            st.info("See `.env.example` for setup instructions")
+            return False
         
-        st.session_state.user_email = f"demo_{user_id}@{provider}.com"
-        st.session_state.user_name = f"Demo User ({provider.title()})"
-        st.session_state.oauth_provider = provider
-        st.session_state.user_id = None  # Will be set by DB layer
-        
-        st.success(f"✅ Demo login successful as {st.session_state.user_email}")
-        st.rerun()
+        # TODO: Implement real OAuth flow
+        st.info("🔐 GitHub OAuth: Click to sign in")
+        if st.button("Sign in with GitHub", key="github_real", use_container_width=True):
+            # Placeholder - integrate with actual OAuth library
+            st.error("Real OAuth not yet integrated. Please set up OAuth credentials first.")
+            return False
         
 
 def require_auth(func):
