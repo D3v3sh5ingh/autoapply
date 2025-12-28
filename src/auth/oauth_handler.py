@@ -94,16 +94,23 @@ class ProductionOAuthHandler:
             
             if should_proceed:
                 # Silently proceed in the background
+                success = False
                 if provider == 'google':
-                    return self._handle_google_callback(code)
+                    success = self._handle_google_callback(code)
                 elif provider == 'github':
-                    return self._handle_github_callback(code)
+                    success = self._handle_github_callback(code)
                 else:
                     # Guessing game if prefix was mangled but we are in dev
                     if is_dev:
                         st.info("Testing providers...")
-                        if self._handle_google_callback(code): return True
-                        return self._handle_github_callback(code)
+                        if self._handle_google_callback(code): 
+                            success = True
+                        elif self._handle_github_callback(code):
+                            success = True
+                
+                if success:
+                    st.rerun()
+                    return True
             
             # If we got here, validation failed
             st.error("⚠️ Authentication State Mismatch")
@@ -243,7 +250,7 @@ class ProductionOAuthHandler:
             
             # Clear query params
             st.toast(f"✅ Signed in as {st.session_state.user_email}")
-            st.rerun()
+            # st.rerun()  <-- REMOVED: Handled by caller
             return True
             
         except Exception as e:
@@ -303,7 +310,7 @@ class ProductionOAuthHandler:
             
             # Clear query params
             st.toast(f"✅ Signed in as {st.session_state.user_email}")
-            st.rerun()
+            # st.rerun() <-- REMOVED: Handled by caller
             return True
             
         except Exception as e:
