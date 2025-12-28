@@ -9,6 +9,9 @@ pdfplumber
 sentence-transformers
 spacy
 sqlalchemy
-python-dotenv>=2.0.0
+python-dotenv
+streamlit-oauth
+authlib
+httpx>=2.0.0
 spacy>=3.7.0
 python-dotenv>=1.0.0

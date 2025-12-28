@@ -62,7 +62,13 @@ def main():
     # Get authenticated user and ensure they exist in DB
     user_info = auth.get_current_user()
     if 'user_id' not in st.session_state or st.session_state.user_id is None:
-        user_id = get_or_create_user(user_info['email'], user_info['name'], user_info['provider'])
+        provider_id = st.session_state.get('oauth_provider_id', user_info['email'])
+        user_id = get_or_create_user(
+            provider=user_info['provider'],
+            provider_user_id=provider_id,
+            email=user_info['email'],
+            name=user_info['name']
+        )
         st.session_state.user_id = user_id
     else:
         user_id = st.session_state.user_id
