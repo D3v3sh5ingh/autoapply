@@ -1,11 +1,12 @@
 """
 Production OAuth handler for JobPulse Agent.
 Real Google and GitHub OAuth with proper callback handling.
+Uses only requests library (no extra dependencies).
 """
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from authlib.integrations.requests_client import OAuth2Session
+import requests
 import json
 
 load_dotenv()
