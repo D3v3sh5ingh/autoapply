@@ -487,9 +487,25 @@ def main():
                     job_key = job.id if job.id else f"tmp_{hash(job.url)}"
                     
                     # Match Score
+                    # Match Score Badge
                     score = int(job.match_score) if job.match_score else 0
                     if score > 0:
-                        st.metric("Match %", f"{score}%")
+                        badge_color = "#22c55e" if score >= 80 else "#f59e0b" if score >= 50 else "#64748b"
+                        st.markdown(f"""
+                            <div style="
+                                background-color: {badge_color}20;
+                                color: {badge_color};
+                                border: 1px solid {badge_color}40;
+                                border-radius: 6px;
+                                padding: 4px 8px;
+                                text-align: center;
+                                font-weight: 600;
+                                font-size: 0.9em;
+                                margin-bottom: 8px;
+                            ">
+                                {score}% Match
+                            </div>
+                        """, unsafe_allow_html=True)
                     
                     st.link_button("📄 View Job", job.url)
                     
