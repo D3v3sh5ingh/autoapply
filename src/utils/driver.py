@@ -27,7 +27,19 @@ def get_driver(headless: bool = True):
     options.add_experimental_option('useAutomationExtension', False)
     
     try:
-        # 1. Try standard install
+        # Check for system-installed Chromium (Streamlit Cloud / Linux)
+        system_chromium = "/usr/bin/chromium"
+        system_driver = "/usr/bin/chromedriver"
+        
+        if os.path.exists(system_chromium) and os.path.exists(system_driver):
+            logger.info(f"Using system Chromium at {system_chromium}")
+            options.binary_location = system_chromium
+            service = Service(executable_path=system_driver)
+            driver = webdriver.Chrome(service=service, options=options)
+            return driver
+            
+        # Fallback to WebDriverManager for Local/Windows
+        logger.info("Using WebDriverManager for local driver setup")
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         return driver
