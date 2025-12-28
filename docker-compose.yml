@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  jobpulse:
+    build: .
+    container_name: jobpulse_agent
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./autoapply.db:/app/autoapply.db # Persist Database
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

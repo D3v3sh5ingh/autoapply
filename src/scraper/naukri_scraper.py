@@ -1,8 +1,10 @@
 from typing import List, Optional
 import time
+import random
 from datetime import datetime
 from .base import BaseScraper
 from ..database.models import Job
+from ..utils.logger import setup_logger
 
 try:
     from selenium import webdriver
@@ -25,45 +27,56 @@ class NaukriScraper(BaseScraper):
         super().__init__(self.BASE_URL)
         self.headless = headless
         self.driver = None
+        self.logger = setup_logger("NaukriScraper")
 
     def _setup_driver(self):
-        if not HAS_SELENIUM:
-            raise ImportError("Selenium is required.")
-        options = Options()
-        if self.headless:
-            options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-gpu")
-        # Important for Naukri to not block immediately
-        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-        
-        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        from src.utils.driver import get_driver
+        self.driver = get_driver(self.headless)
 
     def scrape(self, query: str = "python developer", location: str = "Bangalore", limit: int = 10) -> List[Job]:
         if not self.driver:
             self._setup_driver()
 
-        # Naukri URL format: https://www.naukri.com/python-developer-jobs-in-bangalore
-        # We need to format the query and location to match their slug pattern or use search param
-        # Using search param is safer: https://www.naukri.com/k-python-developer-l-bangalore
+        # Naukri URL format: https://www.naukri.com/python-developer-jobs-in-bangalore or search params
+        # Using search parameter style is more reliable across changes
+        # https://www.naukri.com/k-python-l-pune
         
-        q_slug = f"k-{query.replace(' ', '-')}"
-        l_slug = f"l-{location.replace(' ', '-')}"
-        search_url = f"{self.BASE_URL}/{q_slug}-{l_slug}"
+        q_clean = query.replace(' ', '-')
+        l_clean = location.replace(' ', '-')
+        search_url = f"{self.BASE_URL}/{q_clean}-jobs-in-{l_clean}"
         
-        print(f"Scraping Naukri: {search_url}")
+        self.logger.info(f"Navigating to: {search_url}")
         self.driver.get(search_url)
-        time.sleep(5) # Wait for their heavy JS
+        
+        delay = random.uniform(5, 8)
+        self.logger.info(f"Waiting {delay:.2f}s for page load...")
+        time.sleep(delay)
         
         jobs = []
         try:
             # Selectors for job tuples
+            # Naukri changes classes often. Using partial class or structure is safer.
+            # .srp-jobtuple-wrapper is a common container
             job_tuples = self.driver.find_elements(By.CSS_SELECTOR, ".srp-jobtuple-wrapper")
             
+            if not job_tuples:
+                self.logger.warning("No job tuples found. Checking for 'cust-job-tuple'...")
+                job_tuples = self.driver.find_elements(By.CSS_SELECTOR, "div.cust-job-tuple")
+            
+            if not job_tuples:
+                self.logger.warning("Still no jobs. Taking debug screenshot: naukri_debug.png")
+                self.driver.save_screenshot("naukri_debug.png")
+
+            self.logger.info(f"Found {len(job_tuples)} potential job cards.")
+
             for tuple_node in job_tuples[:limit]:
                 try:
                     title_elem = tuple_node.find_element(By.CSS_SELECTOR, "a.title")
-                    company_elem = tuple_node.find_element(By.CSS_SELECTOR, "a.comp-name")
+                    try:
+                        company_elem = tuple_node.find_element(By.CSS_SELECTOR, "a.comp-name")
+                    except:
+                        # Sometimes company name is not a link
+                        company_elem = tuple_node.find_element(By.CSS_SELECTOR, "div.comp-name")
                     
                     # Location structure varies
                     try:
@@ -72,9 +85,30 @@ class NaukriScraper(BaseScraper):
                     except:
                         location_text = "Unknown"
 
+                    # Try to get description snippet
+                    desc_text = "No description available."
+                    try:
+                        # Naukri often has a job-desc or snippet class
+                        desc_elem = tuple_node.find_element(By.CSS_SELECTOR, "div.job-desc")
+                        desc_text = desc_elem.text.strip()
+                    except:
+                        try:
+                            # Fallback: keyskills match
+                            keyskills = tuple_node.find_elements(By.CSS_SELECTOR, "li.dot") # tags
+                            if not keyskills: keyskills = tuple_node.find_elements(By.CSS_SELECTOR, ".tags span")
+                            if keyskills:
+                                desc_text = "Skills: " + ", ".join([k.text for k in keyskills])
+                        except: pass
+                    
+                    # If still empty, use Title + Company to ensure at least some match possibility
+                    if desc_text == "No description available.":
+                         desc_text = f"{title} role at {company} in {location_text}"
+
                     title = title_elem.text.strip()
                     company = company_elem.text.strip()
                     url = title_elem.get_attribute("href")
+                    
+                    self.logger.info(f"Found Job: {title} at {company}")
                     
                     job = Job(
                         title=title,
@@ -89,7 +123,8 @@ class NaukriScraper(BaseScraper):
                     continue
                     
         except Exception as e:
-            print(f"Error scraping Naukri: {e}")
+            self.logger.error(f"Error scraping Naukri: {e}")
+            self.driver.save_screenshot("naukri_error.png")
             
         return jobs
 

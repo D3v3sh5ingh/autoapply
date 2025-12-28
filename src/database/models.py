@@ -44,5 +44,7 @@ class Profile(Base):
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100))
     resume_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    resume_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True) # Path to PDF file for bot
     skills: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     preferences: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # locations, job types, etc.
